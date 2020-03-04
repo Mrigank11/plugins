@@ -37,6 +37,9 @@ class VideoPlayerValue {
     this.isLooping = false,
     this.isBuffering = false,
     this.volume = 1.0,
+    this.speed = 1.0,
+    this.width = 2147483647, // 2^31 - 1
+    this.height = 2147483647, // 2^31 - 1
     this.errorDescription,
   });
 
@@ -76,6 +79,15 @@ class VideoPlayerValue {
 
   /// The current volume of the playback.
   final double volume;
+
+  /// The current speed of the playback.
+  final double speed;
+
+  /// The max video width
+  final int width;
+
+  /// The max video height
+  final int height;
 
   /// A description of the error if present.
   ///
@@ -119,6 +131,9 @@ class VideoPlayerValue {
     bool isLooping,
     bool isBuffering,
     double volume,
+    double speed,
+    int width, 
+    int height,
     String errorDescription,
   }) {
     return VideoPlayerValue(
@@ -131,6 +146,9 @@ class VideoPlayerValue {
       isLooping: isLooping ?? this.isLooping,
       isBuffering: isBuffering ?? this.isBuffering,
       volume: volume ?? this.volume,
+      speed: speed ?? this.speed,
+      width: width ?? this.width,
+      height: height ?? this.height,
       errorDescription: errorDescription ?? this.errorDescription,
     );
   }
@@ -145,8 +163,11 @@ class VideoPlayerValue {
         'buffered: [${buffered.join(', ')}], '
         'isPlaying: $isPlaying, '
         'isLooping: $isLooping, '
-        'isBuffering: $isBuffering'
+        'isBuffering: $isBuffering '
         'volume: $volume, '
+        'speed: $speed, '
+        'width: $width, '
+        'height: $height, '
         'errorDescription: $errorDescription)';
   }
 }
@@ -280,6 +301,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           initializingCompleter.complete(null);
           _applyLooping();
           _applyVolume();
+          _applySpeed();
+          _applyMaxVideoSize();
           _applyPlayPause();
           break;
         case VideoEventType.completed:
@@ -400,6 +423,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.setVolume(_textureId, value.volume);
   }
 
+  Future<void> _applySpeed() async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.setSpeed(_textureId, value.speed);
+  }
+
+  Future<void> _applyMaxVideoSize() async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.setMaxVideoSize(_textureId, value.width, value.height);
+  }
+
   /// The position in the current video.
   Future<Duration> get position async {
     if (_isDisposed) {
@@ -460,6 +497,25 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   void _updatePosition(Duration position) {
     value = value.copyWith(position: position);
     value = value.copyWith(caption: _getCaptionAt(position));
+  }
+
+  /// Sets the playback speed of [this].
+  ///
+  /// [speed] must be greater than zero.
+  Future<void> setSpeed(double speed) async {
+    if (speed <= 0.0) return;
+    value = value.copyWith(speed: speed);
+    await _applySpeed();
+  }
+
+  /// Sets the video size speed of [this].
+  ///
+  /// [width] must be greater than zero.
+  /// [height] must be greater than zero.
+  Future<void> setMaxVideoSize(int width, int height) async {
+    if (width <= 0.0 || height <= 0.0) return;
+    value = value.copyWith(width: width, height: height);
+    await _applyMaxVideoSize();
   }
 }
 

@@ -38,6 +38,10 @@ class FakeController extends ValueNotifier<VideoPlayerValue>
   @override
   Future<void> setVolume(double volume) async {}
   @override
+  Future<void> setSpeed(double volume) async {}
+  @override
+  Future<void> setMaxVideoSize(int width, int height) async {}
+  @override
   Future<void> initialize() async {}
   @override
   Future<void> pause() async {}
